@@ -1,4 +1,6 @@
-﻿<!DOCTYPE html>
+﻿@inject Microsoft.AspNetCore.Hosting.IHostingEnvironment hostingEnv
+
+<!DOCTYPE html>
 <html>
 <head>
     <meta charset="utf-8" />
@@ -16,7 +18,7 @@
         <link rel="stylesheet" href="~/css/catalog/catalog.component.css" />
         <link rel="stylesheet" href="~/css/orders/orders.component.css" />
     </environment>
-    <environment names="Staging,Production">
+    <environment names="Staging,Production,PROD_US,PROD_EU">
         <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/twitter-bootstrap/4.0.0-alpha.5/css/bootstrap.min.css"
               asp-fallback-href="~/lib/bootstrap/dist/css/bootstrap.min.css"
               asp-fallback-test-class="sr-only" asp-fallback-test-property="position" asp-fallback-test-value="absolute" />
@@ -30,7 +32,7 @@
                 <article class="row">
                     <section class="col-lg-7 col-md-6 col-xs-12">
                         <a asp-area="" asp-page="/Index">
-                            <img src="~/images/brand.png" alt="eShop On Web" />
+                            <img src="~/images/brand.png" alt="eShop On Web"/> <span>ENV: @hostingEnv.EnvironmentName</span>
                         </a>
                     </section>
                     <partial name="_LoginPartial" />
@@ -43,7 +45,7 @@
                 <article class="row">
                     <section class="col-sm-6"></section>
                     <section class="col-sm-6">
-                        <div class="esh-app-footer-text hidden-xs"> e-ShopOnWeb. All rights reserved </div>
+                        <div class="esh-app-footer-text hidden-xs"> e-ShopOnWeb. All rights reserved. EU EDITION YO </div>
                     </section>
                 </article>
             </div>
@@ -54,7 +56,7 @@
         <script src="~/lib/bootstrap/dist/js/bootstrap.js"></script>
         <script src="~/js/site.js" asp-append-version="true"></script>
     </environment>
-    <environment names="Staging,Production">
+    <environment names="Staging,Production,PROD_US,PROD_EU">
         <script src="https://ajax.aspnetcdn.com/ajax/jquery/jquery-2.2.0.min.js"
                 asp-fallback-src="~/lib/jquery/dist/jquery.min.js"
                 asp-fallback-test="window.jQuery">
