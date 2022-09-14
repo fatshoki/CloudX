@@ -75,17 +75,16 @@ public class OrderService : IOrderService
        
         var httpRequestMessage = new HttpRequestMessage(
             HttpMethod.Post,
-            "https://api.github.com/repos/dotnet/AspNetCore.Docs/branches")
+            "https://orderitemreserver.azurewebsites.net/api/OrderItemsReserver")
         
         {
             Content = new StringContent(json) 
         };
 
         //send
-        // var httpResponseMessage = await httpClient.SendAsync(httpRequestMessage);
-        //
-        // return httpResponseMessage.IsSuccessStatusCode);
-        return true;
+        var httpResponseMessage = await httpClient.SendAsync(httpRequestMessage);
+        
+        return httpResponseMessage.IsSuccessStatusCode;
 
     }
 }
