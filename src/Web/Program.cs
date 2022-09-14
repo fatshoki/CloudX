@@ -42,6 +42,8 @@ builder.Services.AddScoped<ITokenClaimsService, IdentityTokenClaimService>();
 
 builder.Services.AddCoreServices(builder.Configuration);
 builder.Services.AddWebServices(builder.Configuration);
+//add httpClientFactory
+builder.Services.AddHttpClient();
 
 //add telemetry
 builder.Services.AddApplicationInsightsTelemetry();

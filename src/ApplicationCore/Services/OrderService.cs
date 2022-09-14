@@ -1,4 +1,7 @@
 ﻿using System.Linq;
+using System.Net.Http;
+using System.Text.Json;
+using System.Text.Json.Serialization;
 using System.Threading.Tasks;
 using Ardalis.GuardClauses;
 using Microsoft.eShopWeb.ApplicationCore.Entities;
@@ -13,18 +16,22 @@ public class OrderService : IOrderService
 {
     private readonly IRepository<Order> _orderRepository;
     private readonly IUriComposer _uriComposer;
+    private readonly IHttpClientFactory _httpClientFactory;
     private readonly IRepository<Basket> _basketRepository;
     private readonly IRepository<CatalogItem> _itemRepository;
 
     public OrderService(IRepository<Basket> basketRepository,
         IRepository<CatalogItem> itemRepository,
         IRepository<Order> orderRepository,
-        IUriComposer uriComposer)
+        IUriComposer uriComposer,
+        IHttpClientFactory httpClientFactory)
     {
         _orderRepository = orderRepository;
         _uriComposer = uriComposer;
+        _httpClientFactory = httpClientFactory;
         _basketRepository = basketRepository;
         _itemRepository = itemRepository;
+        _httpClientFactory = httpClientFactory;
     }
 
     public async Task CreateOrderAsync(int basketId, Address shippingAddress)
@@ -47,7 +54,38 @@ public class OrderService : IOrderService
         }).ToList();
 
         var order = new Order(basket.BuyerId, shippingAddress, items);
-
+        await PostOrderAsync(order); 
         await _orderRepository.AddAsync(order);
+        
+        // await _orderRepository.AddAsync(order).ContinueWith(o =>
+        // {
+        //     
+        // });
+
+}
+
+    private async Task<bool> PostOrderAsync(Order order)
+    {
+        //get client
+        var httpClient = _httpClientFactory.CreateClient();
+        
+        //assemble message
+        var json = JsonSerializer.Serialize(order);
+        
+       
+        var httpRequestMessage = new HttpRequestMessage(
+            HttpMethod.Post,
+            "https://api.github.com/repos/dotnet/AspNetCore.Docs/branches")
+        
+        {
+            Content = new StringContent(json) 
+        };
+
+        //send
+        // var httpResponseMessage = await httpClient.SendAsync(httpRequestMessage);
+        //
+        // return httpResponseMessage.IsSuccessStatusCode);
+        return true;
+
     }
 }
