@@ -2,7 +2,6 @@
 using System.IO;
 using System.Text;
 using System.Threading.Tasks;
-using Azure.Storage.Blobs;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.Azure.WebJobs;
 using Microsoft.Azure.WebJobs.Extensions.Http;
@@ -19,7 +18,7 @@ namespace AzureFunctions.Properties;
 public static class OrderItemsReserver
 {
     private static string _CONNECTION_STRING = "DefaultEndpointsProtocol=https;AccountName=shokistorage1;AccountKey=Q9cGwxBDSZ6T8H8EmJEPQIO9SFkejrdqxejfeWtJv/oZdG2OUrPaZIabbdSfRjgbFrx9BE+zfG/6+AStYMCflQ==;EndpointSuffix=core.windows.net";
-    private static string _CONTAINER_NAME = "cloudxcontainer";
+    private static string _CONTAINER_NAME = "cloudxcontainer2";
     
     [FunctionName("OrderItemsReserver")]
     public static async Task<IActionResult> RunAsync([HttpTrigger(AuthorizationLevel.Anonymous, "post", Route = null)] HttpRequest req, ILogger log)
