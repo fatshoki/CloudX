@@ -22,4 +22,9 @@ public class Address // ValueObject
         Country = country;
         ZipCode = zipcode;
     }
+
+    public override string ToString()
+    {
+        return $"{Street??"-"}, {ZipCode??"-"} {City??"-"}, {State??"-"}, {Country??"-"}";
+    }
 }

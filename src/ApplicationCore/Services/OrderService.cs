@@ -4,6 +4,7 @@ using System.Text.Json;
 using System.Text.Json.Serialization;
 using System.Threading.Tasks;
 using Ardalis.GuardClauses;
+using Microsoft.eShopWeb.ApplicationCore.DTOs;
 using Microsoft.eShopWeb.ApplicationCore.Entities;
 using Microsoft.eShopWeb.ApplicationCore.Entities.BasketAggregate;
 using Microsoft.eShopWeb.ApplicationCore.Entities.OrderAggregate;
@@ -19,6 +20,9 @@ public class OrderService : IOrderService
     private readonly IHttpClientFactory _httpClientFactory;
     private readonly IRepository<Basket> _basketRepository;
     private readonly IRepository<CatalogItem> _itemRepository;
+
+    //todo: move this to appsettings
+    private readonly string _DELIVERY_SERVICE_FUNCTION_URL = "https://shoki-cloudx-eshoponweb.azurewebsites.net/api/NotifyDeliveryService";
 
     public OrderService(IRepository<Basket> basketRepository,
         IRepository<CatalogItem> itemRepository,
@@ -54,29 +58,22 @@ public class OrderService : IOrderService
         }).ToList();
 
         var order = new Order(basket.BuyerId, shippingAddress, items);
-        await PostOrderAsync(order); 
+         
         await _orderRepository.AddAsync(order);
         
-        // await _orderRepository.AddAsync(order).ContinueWith(o =>
-        // {
-        //     
-        // });
-
+        await PostOrderDetailsAsync(order);
 }
 
-    private async Task<bool> PostOrderAsync(Order order)
+    private async Task<bool> PostOrderDetailsAsync(Order order)
     {
         //get client
         var httpClient = _httpClientFactory.CreateClient();
         
         //assemble message
-        var json = JsonSerializer.Serialize(order);
+        var postData = new DeliveryOrderDetailsDTO(order);
+        var json = JsonSerializer.Serialize(postData);
         
-       
-        var httpRequestMessage = new HttpRequestMessage(
-            HttpMethod.Post,
-            "https://orderitemreserver.azurewebsites.net/api/OrderItemsReserver")
-        
+        var httpRequestMessage = new HttpRequestMessage(HttpMethod.Post, _DELIVERY_SERVICE_FUNCTION_URL)
         {
             Content = new StringContent(json) 
         };

@@ -17,4 +17,9 @@ public class OrderItem : BaseEntity
         UnitPrice = unitPrice;
         Units = units;
     }
+
+    public override string ToString()
+    {
+        return $"{ItemOrdered.ProductName} ({Units})";
+    }
 }
