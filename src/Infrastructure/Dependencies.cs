@@ -1,4 +1,6 @@
-﻿using Microsoft.EntityFrameworkCore;
+﻿using System;
+using System.Data;
+using Microsoft.EntityFrameworkCore;
 using Microsoft.eShopWeb.Infrastructure.Data;
 using Microsoft.eShopWeb.Infrastructure.Identity;
 using Microsoft.Extensions.Configuration;
@@ -10,6 +12,39 @@ public static class Dependencies
 {
     public static void ConfigureServices(IConfiguration configuration, IServiceCollection services)
     {
+        try
+        {
+            if (configuration["KeyVaultConnectionStringSecretName"] != null)
+            {
+                //name of the key in the key vault
+                var connectionStringKeyName = configuration["KeyVaultConnectionStringSecretName"];  
+                
+                //actual connection string, pulled from the key vault
+                var connectionString = configuration[connectionStringKeyName];  
+            
+                services.AddDbContext<CatalogContext>(c =>
+                    c.UseSqlServer(connectionString));
+
+                // Add Identity DbContext
+                services.AddDbContext<AppIdentityDbContext>(options =>
+                    options.UseSqlServer(connectionString));
+
+                return;
+
+            }
+
+            throw new Exception("Could not read keyvault - can't retrieve connection strings ");
+        }
+        catch (Exception e)
+        {
+            
+            
+            Console.WriteLine(e);
+            throw;
+        }
+        
+        
+        /*
         var useOnlyInMemoryDatabase = false;
         if (configuration["UseOnlyInMemoryDatabase"] != null)
         {
@@ -36,5 +71,6 @@ public static class Dependencies
             services.AddDbContext<AppIdentityDbContext>(options =>
                 options.UseSqlServer(configuration.GetConnectionString("IdentityConnection")));
         }
+        */
     }
 }
