@@ -4,6 +4,7 @@ using Microsoft.eShopWeb.Infrastructure.Data;
 using Microsoft.eShopWeb.Infrastructure.Data.Queries;
 using Microsoft.eShopWeb.Infrastructure.Logging;
 using Microsoft.eShopWeb.Infrastructure.Services;
+using Microsoft.Extensions.Azure;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 
@@ -19,10 +20,24 @@ public static class ConfigureCoreServices
 
         services.AddScoped<IBasketService, BasketService>();
         services.AddScoped<IOrderService, OrderService>();
+        services.AddScoped<IOrderItemsReserver, OrderItemsReserver>();
         services.AddScoped<IBasketQueryService, BasketQueryService>();
         services.AddSingleton<IUriComposer>(new UriComposer(configuration.Get<CatalogSettings>()));
         services.AddScoped(typeof(IAppLogger<>), typeof(LoggerAdapter<>));
         services.AddTransient<IEmailSender, EmailSender>();
+        
+        //add azure services
+        services.AddAzureClients(clientsBuilder =>
+        {
+            clientsBuilder.AddServiceBusClient(configuration["DeliveryServiceServiceBusConnectionString"])
+                .WithName(configuration["DeliveryServiceServiceBusClientName"])
+                .ConfigureOptions(options =>
+                {
+                    options.RetryOptions.Delay = TimeSpan.FromMilliseconds(50);
+                    options.RetryOptions.MaxDelay = TimeSpan.FromSeconds(5);
+                    options.RetryOptions.MaxRetries = 3;
+                });
+        });
 
         return services;
     }

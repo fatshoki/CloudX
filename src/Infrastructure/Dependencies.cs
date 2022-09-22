@@ -12,45 +12,44 @@ public static class Dependencies
 {
     public static void ConfigureServices(IConfiguration configuration, IServiceCollection services)
     {
-        try
-        {
-            if (configuration["KeyVaultConnectionStringSecretName"] != null)
-            {
-                //name of the key in the key vault
-                var connectionStringKeyName = configuration["KeyVaultConnectionStringSecretName"];  
-                
-                //actual connection string, pulled from the key vault
-                var connectionString = configuration[connectionStringKeyName];  
-            
-                services.AddDbContext<CatalogContext>(c =>
-                    c.UseSqlServer(connectionString));
-
-                // Add Identity DbContext
-                services.AddDbContext<AppIdentityDbContext>(options =>
-                    options.UseSqlServer(connectionString));
-
-                return;
-
-            }
-
-            throw new Exception("Could not read keyvault - can't retrieve connection strings ");
-        }
-        catch (Exception e)
-        {
-            
-            
-            Console.WriteLine(e);
-            throw;
-        }
+        // KeyVault implementation
+        // try
+        // {
+        //     if (configuration["KeyVaultConnectionStringSecretName"] != null)
+        //     {
+        //         //name of the key in the key vault
+        //         var connectionStringKeyName = configuration["KeyVaultConnectionStringSecretName"];  
+        //         
+        //         //actual connection string, pulled from the key vault
+        //         var connectionString = configuration[connectionStringKeyName];  
+        //     
+        //         services.AddDbContext<CatalogContext>(c =>
+        //             c.UseSqlServer(connectionString));
+        //
+        //         // Add Identity DbContext
+        //         services.AddDbContext<AppIdentityDbContext>(options =>
+        //             options.UseSqlServer(connectionString));
+        //
+        //         return;
+        //
+        //     }
+        //
+        //     throw new Exception("Could not read keyvault - can't retrieve connection strings ");
+        // }
+        // catch (Exception e)
+        // {
+        //     
+        //     
+        //     Console.WriteLine(e);
+        //     throw;
+        // }
         
-        
-        /*
         var useOnlyInMemoryDatabase = false;
         if (configuration["UseOnlyInMemoryDatabase"] != null)
         {
             useOnlyInMemoryDatabase = bool.Parse(configuration["UseOnlyInMemoryDatabase"]);
         }
-
+        
         if (useOnlyInMemoryDatabase)
         {
             services.AddDbContext<CatalogContext>(c =>
@@ -66,11 +65,11 @@ public static class Dependencies
             // https://www.microsoft.com/en-us/download/details.aspx?id=54284
             services.AddDbContext<CatalogContext>(c =>
                 c.UseSqlServer(configuration.GetConnectionString("CatalogConnection")));
-
+        
             // Add Identity DbContext
             services.AddDbContext<AppIdentityDbContext>(options =>
                 options.UseSqlServer(configuration.GetConnectionString("IdentityConnection")));
         }
-        */
+        
     }
 }

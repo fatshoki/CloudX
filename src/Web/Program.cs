@@ -25,10 +25,10 @@ builder.WebHost.CaptureStartupErrors(true);
 builder.Services.AddApplicationInsightsTelemetry();
 
 
-//add keyvault to config
-builder.Configuration.AddAzureKeyVault(
-    new Uri($"https://{builder.Configuration["KeyVaultName"]}.vault.azure.net/"),
-    new DefaultAzureCredential());
+// //add key vault to config
+// builder.Configuration.AddAzureKeyVault(
+//     new Uri($"https://{builder.Configuration["KeyVaultName"]}.vault.azure.net/"),
+//     new DefaultAzureCredential());
 
 builder.Logging.AddConsole();
 

@@ -1,10 +1,6 @@
 ﻿using System.Linq;
-using System.Net.Http;
-using System.Text.Json;
-using System.Text.Json.Serialization;
 using System.Threading.Tasks;
 using Ardalis.GuardClauses;
-using Microsoft.eShopWeb.ApplicationCore.DTOs;
 using Microsoft.eShopWeb.ApplicationCore.Entities;
 using Microsoft.eShopWeb.ApplicationCore.Entities.BasketAggregate;
 using Microsoft.eShopWeb.ApplicationCore.Entities.OrderAggregate;
@@ -17,25 +13,22 @@ public class OrderService : IOrderService
 {
     private readonly IRepository<Order> _orderRepository;
     private readonly IUriComposer _uriComposer;
-    private readonly IHttpClientFactory _httpClientFactory;
+    private readonly IOrderItemsReserver _orderItemsReserver;
     private readonly IRepository<Basket> _basketRepository;
     private readonly IRepository<CatalogItem> _itemRepository;
-
-    //todo: move this to appsettings
-    private readonly string _DELIVERY_SERVICE_FUNCTION_URL = "https://shoki-cloudx-eshoponweb.azurewebsites.net/api/NotifyDeliveryService";
+    
 
     public OrderService(IRepository<Basket> basketRepository,
         IRepository<CatalogItem> itemRepository,
         IRepository<Order> orderRepository,
         IUriComposer uriComposer,
-        IHttpClientFactory httpClientFactory)
+        IOrderItemsReserver orderItemsReserver)
     {
         _orderRepository = orderRepository;
         _uriComposer = uriComposer;
-        _httpClientFactory = httpClientFactory;
+        _orderItemsReserver = orderItemsReserver;
         _basketRepository = basketRepository;
         _itemRepository = itemRepository;
-        _httpClientFactory = httpClientFactory;
     }
 
     public async Task CreateOrderAsync(int basketId, Address shippingAddress)
@@ -59,29 +52,12 @@ public class OrderService : IOrderService
 
         var order = new Order(basket.BuyerId, shippingAddress, items);
          
-        await _orderRepository.AddAsync(order);
-        
-        await PostOrderDetailsAsync(order);
-}
+        var addedOrder = await _orderRepository.AddAsync(order);
 
-    private async Task<bool> PostOrderDetailsAsync(Order order)
-    {
-        //get client
-        var httpClient = _httpClientFactory.CreateClient();
-        
-        //assemble message
-        var postData = new DeliveryOrderDetailsDTO(order);
-        var json = JsonSerializer.Serialize(postData);
-        
-        var httpRequestMessage = new HttpRequestMessage(HttpMethod.Post, _DELIVERY_SERVICE_FUNCTION_URL)
+        //post order details to shipping service or whatever
+        if (addedOrder != null)
         {
-            Content = new StringContent(json) 
-        };
-
-        //send
-        var httpResponseMessage = await httpClient.SendAsync(httpRequestMessage);
-        
-        return httpResponseMessage.IsSuccessStatusCode;
-
+            _orderItemsReserver.PostOrderDetailsAsync(addedOrder);
+        }
     }
 }
