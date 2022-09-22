@@ -3,21 +3,18 @@ using System.IO;
 using System.Text.RegularExpressions;
 using System.Threading.Tasks;
 using AzureFunctions.Properties.Models;
+using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.Azure.Cosmos;
 using Microsoft.Azure.WebJobs;
 using Microsoft.Azure.WebJobs.Extensions.Http;
-using Microsoft.AspNetCore.Http;
-using Microsoft.Azure.Cosmos;
-using Microsoft.Azure.WebJobs.Host;
 using Microsoft.eShopWeb.ApplicationCore.DTOs;
-using Microsoft.eShopWeb.ApplicationCore.Entities.OrderAggregate;
 using Microsoft.Extensions.Logging;
 using Newtonsoft.Json;
-using Newtonsoft.Json.Linq;
 
 //using System.Text.Json;
 
-namespace AzureFunctions.Properties;
+namespace AzureFunctions;
 
 public static class NotifyDeliveryService
 {
