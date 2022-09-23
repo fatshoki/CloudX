@@ -1,6 +1,8 @@
 ﻿using System;
+using System.IO;
 using System.Text.RegularExpressions;
 using System.Threading.Tasks;
+using Azure.Storage.Blobs;
 using EShopOnWebAzureFunctions;
 using EShopOnWebAzureFunctions.Properties.Models;
 using Microsoft.Azure.Cosmos;
@@ -13,10 +15,13 @@ namespace AzureFunctions.Helpers;
 public class HelperService : IHelperService
 {
     private readonly CosmosClient _cosmosClient = null;
+    private readonly BlobServiceClient _blobServiceClient;
 
-    public HelperService(CosmosClientWrapper cosmosClientWrapper)
+
+    public HelperService(CosmosClientWrapper cosmosClientWrapper, BlobServiceClientWrapper blobServiceClientWrapper)
     {
         _cosmosClient = cosmosClientWrapper.CosmosClient;
+        _blobServiceClient = blobServiceClientWrapper.BlobServiceClient;
     }
     public DeliveryOrderDetailsDTO GetDeliveryOrderDetailsDtoFromJson(string json)
     {
@@ -33,11 +38,7 @@ public class HelperService : IHelperService
         {
             try
             {
-                //create client
-                //CosmosClient client = new CosmosClient(Constants._COSMOS_DB_CONNECTION_STRING);
                 
-                //get database, create if not exist
-                //Database database = await client.CreateDatabaseIfNotExistsAsync(Constants._COSMOS_DATABASE_ID);
                 Database database = await _cosmosClient.CreateDatabaseIfNotExistsAsync(Constants._COSMOS_DATABASE_ID);
 
                 //get container, create if doesn't exist
@@ -63,43 +64,47 @@ public class HelperService : IHelperService
         return false;
     }
     
-    public static async Task<bool> WriteOrderDetailsToBlobStorageAsync(DeliveryOrderDetailsDTO orderDetailsDto, ILogger logger, int retries = 1)
+    
+    public async Task<bool> WriteOrderDetailsToBlobStorageAsync(DeliveryOrderDetailsDTO orderDetailsDto, ILogger logger, int retries = 1)
     {
         for (int i = 0; i < retries; i++)
         {
             try
             {
-                
-                
-                
-                
-                //create client
-                CosmosClient client = new CosmosClient(Constants._COSMOS_DB_CONNECTION_STRING);
-
-                //get database, create if not exist
-                Database database = await client.CreateDatabaseIfNotExistsAsync(Constants._COSMOS_DATABASE_ID);
-
-                //get container, create if doesn't exist
-                Container container = await database.CreateContainerIfNotExistsAsync(Constants._COSMOS_CONTAINER_ID, Constants._COSMOS_NEW_ORDERS_PARTITION);
-
-                //finally, add item to container
                 var orderModel = new OrderModel(orderDetailsDto);
-                ItemResponse<OrderModel> order = await container.CreateItemAsync<OrderModel>(orderModel);
-
-                logger.LogInformation($"WriteOrderDetailsToCosmosDbAsync: success: new itm: {order.Resource.Id}");
+                var orderModelJson = JsonConvert.SerializeObject(orderModel);
+                var blobName = $"{DateTime.Now.ToString("s")}-DeliveryID-{orderModel.OrderId}";
+            
+                //init client
+                BlobContainerClient containerClient = _blobServiceClient.GetBlobContainerClient(Constants._BLOB_CONTAINER_NAME);
+                await containerClient.CreateIfNotExistsAsync();
+             
+        
+                // get blob client and write
+                BlobClient blobClient = containerClient.GetBlobClient(blobName);
+                using (var stream = new MemoryStream(System.Text.Encoding.UTF8.GetBytes(orderModelJson)))
+                {
+                    await blobClient.UploadAsync(stream);    
+                }
+                
+                logger.LogInformation($"WriteOrderDetailsToBlobStorageAsync: success!");
 
                 return true;
             }
             catch (Exception e)
             {
-                logger.LogError($"WriteOrderDetailsToCosmosDbAsync: exception: {e}");
-                logger.LogError($"WriteOrderDetailsToCosmosDbAsync: Retries left: {retries - 1 - i}");
+                logger.LogError($"WriteOrderDetailsToBlobStorageAsync: exception: {e}");
+                logger.LogError($"WriteOrderDetailsToBlobStorageAsync: Retries left: {retries - 1 - i}");
             }
         }
 
-        logger.LogError($"WriteOrderDetailsToCosmosDbAsync: Failed writing to DB after {retries} retries");
+        logger.LogError($"WriteOrderDetailsToBlobStorageAsync: Failed writing to Blob after {retries} retries");
         
         return false;
+        
     }
+    
+    
+    
 }
 

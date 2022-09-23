@@ -1,4 +1,5 @@
 ﻿using System;
+using Azure.Storage.Blobs;
 using AzureFunctions;
 using AzureFunctions.Helpers;
 using EShopOnWebAzureFunctions;
@@ -26,7 +27,20 @@ namespace AzureFunctions
                 {
                     return new CosmosClientWrapper();
                 }
-                
+            });
+            
+            //add blob client to DI 
+            builder.Services.AddSingleton(s =>
+            {
+                try
+                {
+                    // return new CosmosClient(Constants._COSMOS_DB_CONNECTION_STRING);
+                    return new BlobServiceClientWrapper() { BlobServiceClient = new BlobServiceClient(Constants._BLOB_CONNECTION_STRING) };
+                }
+                catch (Exception e)
+                {
+                    return new BlobServiceClientWrapper();
+                }
             });
 
             //add my helper service

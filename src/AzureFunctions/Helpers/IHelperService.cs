@@ -8,4 +8,5 @@ public interface IHelperService
 {
     public DeliveryOrderDetailsDTO GetDeliveryOrderDetailsDtoFromJson(string json);
     public Task<bool> WriteOrderDetailsToCosmosDbAsync(DeliveryOrderDetailsDTO orderDetailsDto, ILogger logger, int retries = 1);
+    public Task<bool> WriteOrderDetailsToBlobStorageAsync(DeliveryOrderDetailsDTO orderDetailsDto, ILogger logger, int retries = 1);
 }

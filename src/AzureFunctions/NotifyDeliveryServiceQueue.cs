@@ -27,14 +27,24 @@ public class NotifyDeliveryServiceQueue
         {
             var orderDetails = _helperService.GetDeliveryOrderDetailsDtoFromJson(orderItem);
 
-            if (await _helperService.WriteOrderDetailsToCosmosDbAsync(orderDetails, log, 3))
+            //writing to CosmosDB
+            if (await _helperService.WriteOrderDetailsToBlobStorageAsync(orderDetails, log, 3))
             {
-                log.LogInformation($"NotifyDeliveryServiceQueue: Posting order details to CosmosDB: Success!");
+                log.LogInformation($"NotifyDeliveryServiceQueue: Posting order details: Success!");
                 return;
             }
+
+            // //writing to CosmosDB
+            // if (await _helperService.WriteOrderDetailsToCosmosDbAsync(orderDetails, log, 3))
+            // {
+            //     log.LogInformation($"NotifyDeliveryServiceQueue: Posting order details: Success!");
+            //     return;
+            // }
+            //
+            
             
             //notify failsafe queue here
-
+            log.LogWarning($"NotifyDeliveryServiceQueue: Error while posting Order details - running failsafe");
             
         }
         catch (Exception e)
