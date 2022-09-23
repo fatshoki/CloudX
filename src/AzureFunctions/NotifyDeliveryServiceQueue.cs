@@ -1,21 +1,46 @@
-﻿using System.Threading.Tasks;
+﻿using System;
+using System.Threading.Tasks;
+using AzureFunctions.Helpers;
+using EShopOnWebAzureFunctions;
 using Microsoft.Azure.WebJobs;
 using Microsoft.Extensions.Logging;
 
 namespace AzureFunctions;
 
-public static class NotifyDeliveryServiceQueue
+public class NotifyDeliveryServiceQueue
 {
-    private const string _CONNECTION_APP_SETTING_NAME = "DeliveryServiceServiceBusConnectionString";
-    private const string _QUEUE_NAME = "cloudx-eshoponweb-deliveryservice";
+    private readonly IHelperService _helperService;
+
+    public NotifyDeliveryServiceQueue(IHelperService helperService)
+    {
+        _helperService = helperService;
+    }
     
     [FunctionName("NotifyDeliveryServiceQueue")]
-    public static async Task RunAsync(
-        [ServiceBusTrigger(_QUEUE_NAME, Connection = _CONNECTION_APP_SETTING_NAME)] 
+    public async Task RunAsync(
+        [ServiceBusTrigger(Constants._QUEUE_NAME, Connection = Constants._SERVICE_BUS_CONN_STRING_APP_SETTING_NAME)] 
         string orderItem, 
         ILogger log)
     {
         log.LogInformation($"C# ServiceBus queue trigger function processed message: {orderItem}");
+        try
+        {
+            var orderDetails = _helperService.GetDeliveryOrderDetailsDtoFromJson(orderItem);
+
+            if (await _helperService.WriteOrderDetailsToCosmosDbAsync(orderDetails, log, 3))
+            {
+                log.LogInformation($"NotifyDeliveryServiceQueue: Posting order details to CosmosDB: Success!");
+                return;
+            }
+            
+            //notify failsafe queue here
+
+            
+        }
+        catch (Exception e)
+        {
+            log.LogError($"NotifyDeliveryServiceQueue: Exception: {e}");
+        }
         
     }
 }

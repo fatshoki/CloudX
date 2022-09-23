@@ -2,7 +2,7 @@
 using Microsoft.eShopWeb.ApplicationCore.DTOs;
 using Newtonsoft.Json;
 
-namespace AzureFunctions.Properties.Models;
+namespace EShopOnWebAzureFunctions.Properties.Models;
 
 public class OrderModel
 {

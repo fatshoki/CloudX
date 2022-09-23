@@ -1,46 +1,37 @@
 ﻿using System;
 using System.IO;
-using System.Text.RegularExpressions;
 using System.Threading.Tasks;
-using AzureFunctions.Properties.Models;
+using AzureFunctions.Helpers;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
-using Microsoft.Azure.Cosmos;
 using Microsoft.Azure.WebJobs;
 using Microsoft.Azure.WebJobs.Extensions.Http;
-using Microsoft.eShopWeb.ApplicationCore.DTOs;
 using Microsoft.Extensions.Logging;
-using Newtonsoft.Json;
 
 //using System.Text.Json;
 
 namespace AzureFunctions;
 
-public static class NotifyDeliveryService
+public class NotifyDeliveryService
 {
-    //these things would NOT be hardcoded here :D
-    private const string _COSMOS_DB_CONNECTION_STRING = "AccountEndpoint=https://shoki-cloudx-eshoponweb.documents.azure.com:443/;AccountKey=b7BxgT3cYPF3XmSrNbepJVi4WsVBqdBAhovwMNYu6uREz2cndwWQTd5QXt02WoVJoXBCodeT8y7eUJK6UIvhBw==;";
-    
-    private const string _COSMOS_DATABASE_ID = "DeliveryService";
-    private const string _COSMOS_CONTAINER_ID = "Orders";
-    private const string _COSMOS_NEW_ORDERS_PARTITION = "/Unfulfilled";
-    
-    
+    private readonly IHelperService _helperService;
+
+    public NotifyDeliveryService(IHelperService helperService)
+    {
+        _helperService = helperService;
+    }
     
     [FunctionName("NotifyDeliveryService")]
-    public static async Task<IActionResult> RunAsync([HttpTrigger(AuthorizationLevel.Anonymous, "post", Route = null)] HttpRequest req, ILogger log)
+    public async Task<IActionResult> RunAsync([HttpTrigger(AuthorizationLevel.Anonymous, "post", Route = null)] HttpRequest req, ILogger log)
     {
         try
         {
            
             string bodyString = await new StreamReader(req.Body).ReadToEndAsync();
             
-            //sanitize json string
-            var jsonString = Regex.Replace(bodyString, "(\"(?:[^\"\\\\]|\\\\.)*\")|\\s+", "$1");
-            
-            var orderDetails = JsonConvert.DeserializeObject<DeliveryOrderDetailsDTO>(jsonString);
+            var orderDetails = _helperService.GetDeliveryOrderDetailsDtoFromJson(bodyString);
 
-            await WriteOrderDetailsToCosmosDbAsync(orderDetails, log);
+            await _helperService.WriteOrderDetailsToCosmosDbAsync(orderDetails, log);
 
             var msg = $"NotifyDeliveryService: Order with id {orderDetails.Id} processed successfully";
             log.LogInformation(msg);
@@ -53,32 +44,5 @@ public static class NotifyDeliveryService
         }
     }
     
-    private static async Task WriteOrderDetailsToCosmosDbAsync(DeliveryOrderDetailsDTO orderDetailsDto, ILogger logger)
-    {
-        try
-        {
-            //create client
-            CosmosClient client = new CosmosClient(_COSMOS_DB_CONNECTION_STRING);
-            
-            //get database, create if not exist
-            Database database = await client.CreateDatabaseIfNotExistsAsync(_COSMOS_DATABASE_ID);
-            
-            //get container, create if doesn't exist
-            Container container = await database.CreateContainerIfNotExistsAsync(_COSMOS_CONTAINER_ID, _COSMOS_NEW_ORDERS_PARTITION);
-            
-            //finally, add item to container
-            var orderModel = new OrderModel(orderDetailsDto);
-            ItemResponse<OrderModel> order = await container.CreateItemAsync<OrderModel>(orderModel);
-            
-            
-            logger.LogInformation($"WriteOrderDetailsToCosmosDbAsync: success: new itm: {order.Resource.Id}");
-        }
-        catch (Exception e)
-        {
-            logger.LogError($"WriteOrderDetailsToCosmosDbAsync: exception: {e}");
-            throw;
-        }
-        
-        
-    }
+    
 }
