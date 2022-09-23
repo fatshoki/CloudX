@@ -1,4 +1,5 @@
-﻿using System.Collections.Generic;
+﻿using System;
+using System.Collections.Generic;
 using System.Linq;
 using Microsoft.eShopWeb.ApplicationCore.Entities.OrderAggregate;
 using Newtonsoft.Json;
@@ -17,15 +18,18 @@ public class DeliveryOrderDetailsDTO
     
     public DeliveryOrderDetailsDTO(Order o)
     {
-        Id = o.Id;
+        OrderId = o.Id;
         Address = o.ShipToAddress.ToString();
-        Items = string.Join(',', o.OrderItems.Select(i => i.ToString()));
-        FinalPrice = o.OrderItems.Select(item => item.Units * item.UnitPrice).Sum();
+        Items = o.OrderItems.Select(i => new DeliveryItemDTO() { Id = i.ItemOrdered.CatalogItemId, Price = i.UnitPrice, Quantity = i.Units }).ToList();
     }
     
-    public int Id { get; set; }
+    [JsonProperty("id")] 
+    public string Id { get; set; } = Guid.NewGuid().ToString();
+    public int OrderId { get; set; }
     public string Address { get; set; }
-    public string Items { get; set;}
-    public decimal FinalPrice { get; set;}
-    
+    public List<DeliveryItemDTO> Items { get; set; }
+
+    [JsonIgnore] 
+    public decimal FinalPrice => Items.Sum(i => i.Quantity * i.Price);
+
 }

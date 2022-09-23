@@ -1,7 +1,6 @@
 ﻿using System;
 using System.Threading.Tasks;
 using AzureFunctions.Helpers;
-using EShopOnWebAzureFunctions;
 using Microsoft.Azure.WebJobs;
 using Microsoft.Extensions.Logging;
 

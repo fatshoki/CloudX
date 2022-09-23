@@ -4,8 +4,6 @@ using System.Text.RegularExpressions;
 using System.Threading.Tasks;
 using Azure.Messaging.ServiceBus;
 using Azure.Storage.Blobs;
-using EShopOnWebAzureFunctions;
-using EShopOnWebAzureFunctions.Properties.Models;
 using Microsoft.Azure.Cosmos;
 using Microsoft.eShopWeb.ApplicationCore.DTOs;
 using Microsoft.Extensions.Logging;
@@ -50,8 +48,7 @@ public class HelperService : IHelperService
                 Container container = await database.CreateContainerIfNotExistsAsync(Constants._COSMOS_CONTAINER_ID, Constants._COSMOS_NEW_ORDERS_PARTITION);
 
                 //finally, add item to container
-                var orderModel = new OrderModel(orderDetailsDto);
-                ItemResponse<OrderModel> order = await container.CreateItemAsync<OrderModel>(orderModel);
+                ItemResponse<DeliveryOrderDetailsDTO> order = await container.CreateItemAsync<DeliveryOrderDetailsDTO>(orderDetailsDto);
 
                 logger.LogInformation($"WriteOrderDetailsToCosmosDbAsync: success: new itm: {order.Resource.Id}");
 
@@ -75,9 +72,8 @@ public class HelperService : IHelperService
         {
             try
             {
-                var orderModel = new OrderModel(orderDetailsDto);
-                var orderModelJson = JsonConvert.SerializeObject(orderModel);
-                var blobName = $"{DateTime.Now.ToString("s")}-DeliveryID-{orderModel.OrderId}";
+                var orderDetailJson = JsonConvert.SerializeObject(orderDetailsDto);
+                var blobName = $"{DateTime.Now.ToString("s")}-DeliveryID-{orderDetailsDto.OrderId}";
             
                 //init client
                 BlobContainerClient containerClient = _blobServiceClient.GetBlobContainerClient(Constants._BLOB_CONTAINER_NAME);
@@ -86,7 +82,7 @@ public class HelperService : IHelperService
         
                 // get blob client and write
                 BlobClient blobClient = containerClient.GetBlobClient(blobName);
-                using (var stream = new MemoryStream(System.Text.Encoding.UTF8.GetBytes(orderModelJson)))
+                using (var stream = new MemoryStream(System.Text.Encoding.UTF8.GetBytes(orderDetailJson)))
                 {
                     await blobClient.UploadAsync(stream);    
                 }

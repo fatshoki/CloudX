@@ -3,7 +3,6 @@ using Azure.Messaging.ServiceBus;
 using Azure.Storage.Blobs;
 using AzureFunctions;
 using AzureFunctions.Helpers;
-using EShopOnWebAzureFunctions;
 using Microsoft.Azure.Cosmos;
 using Microsoft.Azure.Functions.Extensions.DependencyInjection;
 using Microsoft.Extensions.DependencyInjection;
