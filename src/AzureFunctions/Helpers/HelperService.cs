@@ -2,6 +2,7 @@
 using System.IO;
 using System.Text.RegularExpressions;
 using System.Threading.Tasks;
+using Azure.Messaging.ServiceBus;
 using Azure.Storage.Blobs;
 using EShopOnWebAzureFunctions;
 using EShopOnWebAzureFunctions.Properties.Models;
@@ -16,12 +17,17 @@ public class HelperService : IHelperService
 {
     private readonly CosmosClient _cosmosClient = null;
     private readonly BlobServiceClient _blobServiceClient;
+    private readonly ServiceBusClient _serviceBusClient;
 
 
-    public HelperService(CosmosClientWrapper cosmosClientWrapper, BlobServiceClientWrapper blobServiceClientWrapper)
+    public HelperService(
+        ClientWrapper<CosmosClient> cosmosClientWrapper,
+        ClientWrapper<BlobServiceClient> blobServiceClientWrapper,
+        ClientWrapper<ServiceBusClient> serviceBusClientWrapper)
     {
-        _cosmosClient = cosmosClientWrapper.CosmosClient;
-        _blobServiceClient = blobServiceClientWrapper.BlobServiceClient;
+        _cosmosClient = cosmosClientWrapper.Client;
+        _blobServiceClient = blobServiceClientWrapper.Client;
+        _serviceBusClient = serviceBusClientWrapper.Client;
     }
     public DeliveryOrderDetailsDTO GetDeliveryOrderDetailsDtoFromJson(string json)
     {
@@ -30,7 +36,6 @@ public class HelperService : IHelperService
         var orderDetailsDto = JsonConvert.DeserializeObject<DeliveryOrderDetailsDTO>(jsonString);
         return orderDetailsDto;
     }
-
 
     public async Task<bool> WriteOrderDetailsToCosmosDbAsync(DeliveryOrderDetailsDTO orderDetailsDto, ILogger logger, int retries = 1)
     {
@@ -63,7 +68,6 @@ public class HelperService : IHelperService
         
         return false;
     }
-    
     
     public async Task<bool> WriteOrderDetailsToBlobStorageAsync(DeliveryOrderDetailsDTO orderDetailsDto, ILogger logger, int retries = 1)
     {
@@ -103,8 +107,31 @@ public class HelperService : IHelperService
         return false;
         
     }
-    
-    
-    
+
+    public async Task<bool> SendFailureMessage(DeliveryOrderDetailsDTO orderDetailsDto, ILogger logger)
+    {
+        try
+        {
+            await using ServiceBusSender sender = _serviceBusClient.CreateSender(Constants._DELIVERY_SERVICE_FAILSAFE_QUEUE_NAME);
+        
+            //assemble message
+            var json = JsonConvert.SerializeObject(orderDetailsDto);
+            var message = new ServiceBusMessage(json);
+
+            // Send the message to the queue.
+            await sender.SendMessageAsync(message);
+            
+            logger.LogInformation($"SendFailureMessage: Failsafe message successfully sent!");
+
+            return true;
+        }
+        catch (Exception e)
+        {
+            logger.LogError($"SendFailureMessage: Exception: {e.Message}");
+            logger.LogWarning($"SendFailureMessage: Failed to send failure message");
+            
+            return false;
+        }
+    }
 }
 

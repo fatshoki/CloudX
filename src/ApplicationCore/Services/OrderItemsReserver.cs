@@ -41,7 +41,7 @@ public class OrderItemsReserver : IOrderItemsReserver
     }
     
     /// <summary>
-    /// AzureFunction implementation - directly call Azure function
+    /// ServiceBus implementation - send message to service bus
     /// </summary>
     /// <param name="order"></param>
     /// <returns></returns>

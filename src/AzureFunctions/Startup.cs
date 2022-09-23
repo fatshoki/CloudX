@@ -1,4 +1,5 @@
 ﻿using System;
+using Azure.Messaging.ServiceBus;
 using Azure.Storage.Blobs;
 using AzureFunctions;
 using AzureFunctions.Helpers;
@@ -15,31 +16,42 @@ namespace AzureFunctions
     {
         public override void Configure(IFunctionsHostBuilder builder)
         {
-            //add cosmos client to DI 
+            //add cosmos client to DI container
             builder.Services.AddSingleton(s =>
             {
                 try
                 {
-                    // return new CosmosClient(Constants._COSMOS_DB_CONNECTION_STRING);
-                    return new CosmosClientWrapper() { CosmosClient = new CosmosClient(Constants._COSMOS_DB_CONNECTION_STRING) };
+                    return new ClientWrapper<CosmosClient>(new CosmosClient(Constants._COSMOS_DB_CONNECTION_STRING));
                 }
                 catch (Exception e)
                 {
-                    return new CosmosClientWrapper();
+                    return new ClientWrapper<CosmosClient>();
                 }
             });
             
-            //add blob client to DI 
+            //add blob client to DI container
             builder.Services.AddSingleton(s =>
             {
                 try
                 {
-                    // return new CosmosClient(Constants._COSMOS_DB_CONNECTION_STRING);
-                    return new BlobServiceClientWrapper() { BlobServiceClient = new BlobServiceClient(Constants._BLOB_CONNECTION_STRING) };
+                    return new ClientWrapper<BlobServiceClient>(new BlobServiceClient(Constants._BLOB_CONNECTION_STRING));
                 }
                 catch (Exception e)
                 {
-                    return new BlobServiceClientWrapper();
+                    return new ClientWrapper<BlobServiceClient>();
+                }
+            });
+            
+            //add serviceBus client to DI container
+            builder.Services.AddSingleton(s =>
+            {
+                try
+                {
+                    return new ClientWrapper<ServiceBusClient>(new ServiceBusClient(Constants._SERVICE_BUS_CONNECTION_STRING));
+                }
+                catch (Exception e)
+                {
+                    return new ClientWrapper<ServiceBusClient>();
                 }
             });
 

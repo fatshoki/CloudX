@@ -1,14 +1,9 @@
 ﻿using System;
-using System.IO;
 using System.Threading.Tasks;
 using AzureFunctions.Helpers;
-using Microsoft.AspNetCore.Http;
-using Microsoft.AspNetCore.Mvc;
+using EShopOnWebAzureFunctions;
 using Microsoft.Azure.WebJobs;
-using Microsoft.Azure.WebJobs.Extensions.Http;
 using Microsoft.Extensions.Logging;
-
-//using System.Text.Json;
 
 namespace AzureFunctions;
 
@@ -22,27 +17,41 @@ public class NotifyDeliveryService
     }
     
     [FunctionName("NotifyDeliveryService")]
-    public async Task<IActionResult> RunAsync([HttpTrigger(AuthorizationLevel.Anonymous, "post", Route = null)] HttpRequest req, ILogger log)
+    public async Task RunAsync(
+        [ServiceBusTrigger(Constants._DELIVERY_SERVICE_QUEUE_NAME, Connection = Constants._SERVICE_BUS_CONN_STRING_APP_SETTING_NAME)] 
+        string orderItem, 
+        ILogger log)
     {
+        log.LogInformation($"C# ServiceBus queue trigger function processed message: {orderItem}");
         try
         {
-           
-            string bodyString = await new StreamReader(req.Body).ReadToEndAsync();
+            var orderDetails = _helperService.GetDeliveryOrderDetailsDtoFromJson(orderItem);
+
+            //writing to CosmosDB
+            if (await _helperService.WriteOrderDetailsToBlobStorageAsync(orderDetails, log, 3))
+            {
+                log.LogInformation($"NotifyDeliveryServiceQueue: Posting order details: Success!");
+                return;
+            }
+
+            // //writing to CosmosDB
+            // if (await _helperService.WriteOrderDetailsToCosmosDbAsync(orderDetails, log, 3))
+            // {
+            //     log.LogInformation($"NotifyDeliveryServiceQueue: Posting order details: Success!");
+            //     return;
+            // }
+            //
             
-            var orderDetails = _helperService.GetDeliveryOrderDetailsDtoFromJson(bodyString);
+            
+            //if we came to here, notify failsafe queue
+            log.LogWarning($"NotifyDeliveryServiceQueue: Error while posting Order details - running failsafe");
+            _helperService.SendFailureMessage(orderDetails, log);
 
-            await _helperService.WriteOrderDetailsToCosmosDbAsync(orderDetails, log);
-
-            var msg = $"NotifyDeliveryService: Order with id {orderDetails.Id} processed successfully";
-            log.LogInformation(msg);
-            return new OkObjectResult(msg);
         }
         catch (Exception e)
         {
-            log.LogError($"NotifyDeliveryService: error: {e}");
-            return new BadRequestObjectResult($"NotifyDeliveryService: error: {e}");
+            log.LogError($"NotifyDeliveryServiceQueue: Exception: {e}");
         }
+        
     }
-    
-    
 }
