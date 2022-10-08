@@ -1,4 +1,12 @@
-#See https://aka.ms/containerfastmode to understand how Visual Studio uses this Dockerfile to build your images for faster debugging.
+# N.B.! Run this from the folder containing the .-sln file! otherwise dotnet restore will fail!!!
+# docker build -t publicapi -f ./src/PublicApi/Dockerfile .
+# docker tag publicapi shokieshoponweb.azurecr.io/publicapi:v<n>
+# docker push shokieshoponweb.azurecr.io/publicapi:v<n>
+
+
+
+
+# you dumbass. you first need to rebuild the image, THEN publish it. otherwise i'm jsut republishing the same image... or not?
 
 FROM mcr.microsoft.com/dotnet/aspnet:6.0 AS base
 WORKDIR /app

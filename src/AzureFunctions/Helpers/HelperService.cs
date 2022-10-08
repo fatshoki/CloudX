@@ -84,7 +84,7 @@ public class HelperService : IHelperService
                 BlobClient blobClient = containerClient.GetBlobClient(blobName);
                 using (var stream = new MemoryStream(System.Text.Encoding.UTF8.GetBytes(orderDetailJson)))
                 {
-                    await blobClient.UploadAsync(stream);    
+                    var result = await blobClient.UploadAsync(stream);
                 }
                 
                 logger.LogInformation($"WriteOrderDetailsToBlobStorageAsync: success!");
